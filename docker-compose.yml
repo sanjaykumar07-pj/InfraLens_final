@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+
+  # ── REVERSE PROXY (Nginx) ────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: infralens-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+      - data_uploads:/data/uploads:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - infralens-net
+
+  # ── BACKEND (FastAPI) ────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: infralens-backend
+    expose:
+      - "8000"
+    volumes:
+      - data_uploads:/data/uploads
+      - data_meta:/data
+    environment:
+      - ENV=production
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - infralens-net
+
+# ── VOLUMES ───────────────────────────────────────────────
+volumes:
+  data_uploads:
+    driver: local
+  data_meta:
+    driver: local
+
+# ── NETWORKS ─────────────────────────────────────────────
+networks:
+  infralens-net:
+    driver: bridge

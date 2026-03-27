@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>About — InfraLens</title>
+<link rel="stylesheet" href="shared.css"/>
+<script src="districts_data.js"></script>
+<style>
+body{overflow:auto;}
+.about-wrap{max-width:1200px;margin:0 auto;padding:120px 40px 100px;position:relative;z-index:1;}
+.page-label{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--lime);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.page-label::before{content:'//';opacity:0.4;}
+.page-title{font-size:clamp(40px,6vw,72px);font-weight:800;letter-spacing:-2px;margin-bottom:16px;line-height:1.0;}
+.page-sub{font-size:16px;color:var(--muted2);max-width:600px;line-height:1.7;margin-bottom:80px;}
+
+/* LIVE STATS */
+.live-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:80px;}
+.ls-card{padding:28px;background:var(--bg2);text-align:center;position:relative;overflow:hidden;}
+.ls-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ct,var(--lime));opacity:0.7;}
+.ls-val{font-family:var(--mono);font-size:32px;font-weight:700;line-height:1;margin-bottom:8px;}
+.ls-lbl{font-size:12px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.5px;}
+.ls-note{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;}
+
+/* MISSION */
+.mission{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-bottom:100px;border:1px solid var(--border);padding:48px;}
+.mission-label{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--lime);margin-bottom:12px;}
+.mission h2{font-size:34px;font-weight:800;letter-spacing:-1px;margin-bottom:16px;line-height:1.1;}
+.mission p{font-size:14px;color:var(--muted2);line-height:1.8;margin-bottom:14px;}
+.mission-cta{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:var(--lime);color:#07080f;font-size:13px;font-weight:700;text-decoration:none;transition:all 0.2s;margin-top:8px;border-radius:4px;}
+.mission-cta:hover{background:var(--lime2);}
+.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);}
+.m-box{padding:22px;background:var(--bg);text-align:center;}
+.m-box-icon{font-size:26px;margin-bottom:10px;}
+.m-box-val{font-family:var(--mono);font-size:20px;font-weight:700;margin-bottom:4px;}
+.m-box-lbl{font-size:11px;color:var(--muted2);letter-spacing:0.5px;text-transform:uppercase;}
+
+/* WORST DISTRICTS */
+.worst-section{margin-bottom:80px;}
+.worst-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-top:32px;}
+.worst-card{padding:20px;background:var(--bg2);transition:all 0.2s;cursor:pointer;text-decoration:none;display:block;}
+.worst-card:hover{background:var(--bg3);}
+.worst-rank{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:1px;}
+.worst-name{font-size:16px;font-weight:700;margin-bottom:4px;}
+.worst-state{font-size:12px;color:var(--muted2);margin-bottom:12px;}
+.worst-score{font-family:var(--mono);font-size:28px;font-weight:700;margin-bottom:8px;}
+.worst-bars{display:flex;gap:4px;}
+.wbar{flex:1;height:3px;}
+
+/* PROBLEM */
+.problem{margin-bottom:80px;}
+.prob-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-top:32px;}
+.prob-card{padding:24px;background:var(--bg2);border-left:2px solid transparent;transition:all 0.2s;}
+.prob-card:hover{background:var(--bg3);border-left-color:var(--lime);}
+.prob-title{font-size:14px;font-weight:700;margin-bottom:8px;}
+.prob-desc{font-size:12px;color:var(--muted2);line-height:1.7;}
+
+/* TECH */
+.tech-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-top:32px;}
+.tech-pill{padding:18px 20px;background:var(--bg2);display:flex;align-items:center;gap:12px;transition:all 0.2s;}
+.tech-pill:hover{background:var(--bg3);}
+.tech-icon{font-size:22px;}
+.tech-name{font-size:13px;font-weight:700;}
+.tech-use{font-size:11px;color:var(--muted2);}
+
+.divider-line{border:none;border-top:1px solid var(--border);margin:60px 0;}
+</style>
+</head>
+<body>
+<div class="ticker"><div class="ticker-inner">
+  <span class="ticker-item"><span class="ticker-dot"></span>ABOUT INFRALENS</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>BUILT FOR INDIA'S RURAL FUTURE</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>IIT PATNA CHALLENGE 2025</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>ABOUT INFRALENS</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>BUILT FOR INDIA'S RURAL FUTURE</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>IIT PATNA CHALLENGE 2025</span>
+</div></div>
+<nav>
+  <a href="index.html" class="nav-logo"><div class="nav-logo-icon">🛰</div><div><div class="nav-logo-name">InfraLens</div><div class="nav-logo-tag">Infrastructure Intelligence</div></div></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="dashboard.html" class="nav-link">Dashboard</a>
+    <a href="analytics.html" class="nav-link">Analytics</a>
+    <a href="predict.html" class="nav-link">AI Predict</a>
+    <a href="about.html" class="nav-link active">About</a>
+    <a href="contact.html" class="nav-link">Contact</a>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <a href="login.html" class="btn-outline">Log In</a>
+    <a href="signup.html" class="btn-fill">Get Started →</a>
+  </div>
+</nav>
+
+<div class="about-wrap">
+  <div class="page-label">About InfraLens</div>
+  <h1 class="page-title">Built to Connect<br/>India's Dots</h1>
+  <p class="page-sub">A student-built platform that turns siloed government data into life-changing infrastructure investment decisions.</p>
+
+  <!-- LIVE STATS FROM ACTUAL DATA -->
+  <div class="live-stats">
+    <div class="ls-card" style="--ct:var(--red)">
+      <div class="ls-val" style="color:var(--red)" id="lsCrit">—</div>
+      <div class="ls-lbl">Critical Districts</div>
+      <div class="ls-note">SCORE &lt; 40/100</div>
+    </div>
+    <div class="ls-card" style="--ct:var(--amber)">
+      <div class="ls-val" style="color:var(--amber)" id="lsDistricts">—</div>
+      <div class="ls-lbl">Districts Tracked</div>
+      <div class="ls-note">ACROSS INDIA</div>
+    </div>
+    <div class="ls-card" style="--ct:var(--lime)">
+      <div class="ls-val" style="color:var(--lime)" id="lsStates">—</div>
+      <div class="ls-lbl">States Covered</div>
+      <div class="ls-note">WITH LIVE DATA</div>
+    </div>
+    <div class="ls-card" style="--ct:var(--cyan)">
+      <div class="ls-val" style="color:var(--cyan)" id="lsPop">—</div>
+      <div class="ls-lbl">Underserved People</div>
+      <div class="ls-note">IN CRITICAL ZONES</div>
+    </div>
+  </div>
+
+  <!-- MISSION -->
+  <div class="mission">
+    <div>
+      <div class="mission-label">// Our Mission</div>
+      <h2>No district left behind because of missing data</h2>
+      <p>India has incredible infrastructure schemes — PMGSY, Jal Jeevan, BharatNet, PM-KUSUM. But they operate in silos. A road gets built with no power. Power reaches a village with no water. Nobody looks at all 4 layers together.</p>
+      <p>InfraLens was built to solve exactly that. We pull data from every government source and give decision-makers one unified view of where the real gaps are.</p>
+      <a href="dashboard.html" class="mission-cta">SEE IT IN ACTION →</a>
+    </div>
+    <div class="m-grid">
+      <div class="m-box"><div class="m-box-icon">🛣</div><div class="m-box-val" style="color:var(--blue)">30%</div><div class="m-box-lbl">Road Weight</div></div>
+      <div class="m-box"><div class="m-box-icon">⚡</div><div class="m-box-val" style="color:var(--amber)">25%</div><div class="m-box-lbl">Power Weight</div></div>
+      <div class="m-box"><div class="m-box-icon">💧</div><div class="m-box-val" style="color:var(--green)">25%</div><div class="m-box-lbl">Water Weight</div></div>
+      <div class="m-box"><div class="m-box-icon">📶</div><div class="m-box-val" style="color:var(--purple)">20%</div><div class="m-box-lbl">Telecom Weight</div></div>
+    </div>
+  </div>
+
+  <!-- WORST DISTRICTS (LIVE) -->
+  <div class="worst-section">
+    <div class="page-label">Live Data</div>
+    <h2 style="font-size:38px;font-weight:800;letter-spacing:-1px;margin-bottom:12px;">Most Critical Districts Right Now</h2>
+    <p style="font-size:14px;color:var(--muted2);max-width:600px;line-height:1.7;">The 6 districts with the lowest composite infrastructure scores from our live dataset. Click any to explore on the map.</p>
+    <div class="worst-grid" id="worstGrid"></div>
+  </div>
+
+  <hr class="divider-line"/>
+
+  <!-- PROBLEM -->
+  <div class="problem">
+    <div class="page-label">The Problem</div>
+    <h2 style="font-size:38px;font-weight:800;letter-spacing:-1px;margin-bottom:12px;">Why Investment Fails</h2>
+    <p style="font-size:14px;color:var(--muted2);max-width:600px;line-height:1.7;">4 ministries, 4 dashboards, 0 integration. Nobody sees the full picture.</p>
+    <div class="prob-grid">
+      <div class="prob-card"><div class="prob-title">🔴 Siloed Data</div><div class="prob-desc">4 ministries, 4 dashboards, 0 integration. Nobody sees the full infrastructure picture at district level.</div></div>
+      <div class="prob-card"><div class="prob-title">🟡 Reactive Planning</div><div class="prob-desc">Investments happen after failures, not before. No predictive risk system exists at district level.</div></div>
+      <div class="prob-card"><div class="prob-title">🔵 No Prioritization</div><div class="prob-desc">Budget goes to visible districts, not the most critical ones. Political bias without data-backed decisions.</div></div>
+      <div class="prob-card"><div class="prob-title">🟢 Our Solution</div><div class="prob-desc">InfraLens connects all 4 dots and ranks districts by true severity — not politics, not guesswork.</div></div>
+      <div class="prob-card"><div class="prob-title">🤖 ML Prediction</div><div class="prob-desc">6-month risk prediction lets planners act before a district becomes critical and expensive to fix.</div></div>
+      <div class="prob-card"><div class="prob-title">📡 Scalable</div><div class="prob-desc">Works for <span id="distCountInline">—</span> districts today. Architecture built to scale to all 773 districts across India.</div></div>
+    </div>
+  </div>
+
+  <hr class="divider-line"/>
+
+  <!-- TECH STACK -->
+  <div>
+    <div class="page-label">Tech Stack</div>
+    <h2 style="font-size:38px;font-weight:800;letter-spacing:-1px;margin-bottom:12px;">What Powers InfraLens</h2>
+    <p style="font-size:14px;color:var(--muted2);max-width:500px;line-height:1.7;margin-bottom:0">Production-ready stack built for speed, reliability and scale.</p>
+    <div class="tech-grid">
+      <div class="tech-pill"><span class="tech-icon">🐍</span><div><div class="tech-name">Python</div><div class="tech-use">Backend & ML</div></div></div>
+      <div class="tech-pill"><span class="tech-icon">⚡</span><div><div class="tech-name">FastAPI</div><div class="tech-use">REST API</div></div></div>
+      <div class="tech-pill"><span class="tech-icon">🗺</span><div><div class="tech-name">Leaflet.js</div><div class="tech-use">Interactive Map</div></div></div>
+      <div class="tech-pill"><span class="tech-icon">🤖</span><div><div class="tech-name">scikit-learn</div><div class="tech-use">ML Model</div></div></div>
+      <div class="tech-pill"><span class="tech-icon">📊</span><div><div class="tech-name">NumPy/Pandas</div><div class="tech-use">Data Processing</div></div></div>
+      <div class="tech-pill"><span class="tech-icon">🌐</span><div><div class="tech-name">HTML/CSS/JS</div><div class="tech-use">Frontend</div></div></div>
+      <div class="tech-pill"><span class="tech-icon">🗄</span><div><div class="tech-name">data.gov.in</div><div class="tech-use">Primary Data</div></div></div>
+      <div class="tech-pill"><span class="tech-icon">🛰</span><div><div class="tech-name">ISRO Bhuvan</div><div class="tech-use">Satellite Data</div></div></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div><a href="index.html" class="footer-logo"><div class="footer-logo-icon">🛰</div><span class="footer-logo-name">InfraLens</span></a><p class="footer-desc">Connecting India's infrastructure data dots in one intelligent platform.</p></div>
+    <div><div class="footer-col-title">Platform</div><a href="dashboard.html" class="footer-link">Map Dashboard</a><a href="analytics.html" class="footer-link">Analytics</a><a href="predict.html" class="footer-link">AI Predict</a></div>
+    <div><div class="footer-col-title">Company</div><a href="about.html" class="footer-link">About</a><a href="contact.html" class="footer-link">Contact</a></div>
+    <div><div class="footer-col-title">Data Sources</div><a href="#" class="footer-link">data.gov.in</a><a href="#" class="footer-link">PMGSY</a><a href="#" class="footer-link">Jal Jeevan Mission</a><a href="#" class="footer-link">TRAI</a></div>
+  </div>
+  <div class="footer-bottom"><span class="footer-copy">© 2025 INFRALENS · IIT PATNA — CONNECT THE DOTS CHALLENGE</span><span class="footer-copy">BUILT FOR INDIA'S RURAL FUTURE</span></div>
+</footer>
+
+<script>
+function calcScore(d){return Math.round(d.road*0.30+d.power*0.25+d.water*0.25+d.telecom*0.20);}
+function sc(s){return s<40?'#ff4560':s<70?'#ffb340':'#b3f73f';}
+
+const D=INDIA_DISTRICTS.map(d=>({...d,score:calcScore(d)})).sort((a,b)=>a.score-b.score);
+const critical=D.filter(d=>d.score<40);
+const states=new Set(D.map(d=>d.state));
+const critPop=critical.reduce((s,d)=>s+(d.pop||500000),0);
+
+document.getElementById('lsCrit').textContent=critical.length;
+document.getElementById('lsDistricts').textContent=D.length;
+document.getElementById('lsStates').textContent=states.size;
+document.getElementById('lsPop').textContent=(critPop/1e7).toFixed(1)+'Cr';
+document.getElementById('distCountInline').textContent=D.length;
+
+// Worst 6 districts live cards
+const wg=document.getElementById('worstGrid');
+D.slice(0,6).forEach((d,i)=>{
+  const c=sc(d.score);
+  const risk=Math.min(95,Math.round((100-d.score)*0.65));
+  wg.innerHTML+=`<a href="dashboard.html" class="worst-card">
+    <div class="worst-rank">#${i+1} MOST CRITICAL</div>
+    <div class="worst-name">${d.name}</div>
+    <div class="worst-state">${d.state}</div>
+    <div class="worst-score" style="color:${c}">${d.score}<span style="font-size:14px;color:var(--muted2)">/100</span></div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;">6M RISK: <span style="color:${risk>65?'#ff4560':'#ffb340'}">${risk}%</span></div>
+    <div class="worst-bars">
+      <div class="wbar" style="background:#3d7eff;opacity:${d.road/100+0.2}" title="Road ${d.road}%"></div>
+      <div class="wbar" style="background:#ffb340;opacity:${d.power/100+0.2}" title="Power ${d.power}%"></div>
+      <div class="wbar" style="background:#00e5a0;opacity:${d.water/100+0.2}" title="Water ${d.water}%"></div>
+      <div class="wbar" style="background:#a855f7;opacity:${d.telecom/100+0.2}" title="Telecom ${d.telecom}%"></div>
+    </div>
+  </a>`;
+});
+
+function loadUser(){
+  const user=JSON.parse(localStorage.getItem('user')||'null');
+  const nav=document.getElementById('navActions');
+  if(!nav||!user)return;
+  nav.innerHTML=`
+    <div onclick="window.location.href='profile.html'" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 14px;border:1px solid rgba(179,247,63,0.2);border-radius:8px;background:rgba(179,247,63,0.05);">
+      ${user.picture?`<img src="${user.picture}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;"/>`:
+      `<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#b3f73f,#3d7eff);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#07080f;">${user.avatar}</div>`}
+      <span style="font-size:13px;font-weight:600;color:#b3f73f">${user.name}</span>
+    </div>
+    <button onclick="logout()" style="padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;color:#ff4560;border:1px solid rgba(255,69,96,0.2);background:rgba(255,69,96,0.05);cursor:pointer;font-family:'Space Grotesk',sans-serif;">Logout</button>`;
+}
+function logout(){localStorage.removeItem('user');window.location.href='index.html';}
+loadUser();
+</script>
+</body>
+</html>

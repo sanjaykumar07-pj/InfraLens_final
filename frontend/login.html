@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Login — InfraLens</title>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+body{min-height:100vh;display:flex;flex-direction:column;}
+.auth-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:120px 20px 60px;position:relative;z-index:1;}
+.auth-outer{position:relative;}
+.auth-outer::before,.auth-outer::after{content:'';position:absolute;width:20px;height:20px;border-color:var(--lime);border-style:solid;}
+.auth-outer::before{top:-1px;left:-1px;border-width:2px 0 0 2px;}
+.auth-outer::after{top:-1px;right:-1px;border-width:2px 2px 0 0;}
+.auth-outer-b{position:relative;}
+.auth-outer-b::before,.auth-outer-b::after{content:'';position:absolute;width:20px;height:20px;border-color:var(--lime);border-style:solid;}
+.auth-outer-b::before{bottom:-1px;left:-1px;border-width:0 0 2px 2px;}
+.auth-outer-b::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;}
+.auth-card{width:100%;max-width:420px;background:var(--bg2);border:1px solid var(--border);padding:40px;}
+.auth-top{text-align:center;margin-bottom:28px;}
+.auth-icon{width:52px;height:52px;border:2px solid var(--lime);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:24px;background:rgba(179,247,63,0.05);box-shadow:0 0 30px rgba(179,247,63,0.25);margin-bottom:14px;}
+.auth-title{font-size:26px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px;}
+.auth-sub{font-size:13px;color:var(--muted2);}
+.btn-google{width:100%;padding:12px;font-size:14px;font-weight:700;color:var(--text);background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);cursor:pointer;font-family:var(--font);transition:all 0.2s;border-radius:4px;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:20px;}
+.btn-google:hover{background:rgba(255,255,255,0.09);border-color:rgba(255,255,255,0.25);}
+.or-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:1px;}
+.or-row::before,.or-row::after{content:'';flex:1;height:1px;background:var(--border);}
+.form-group{margin-bottom:16px;}
+.form-label{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px;}
+.form-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:12px 14px;font-size:14px;font-family:var(--font);color:var(--text);outline:none;transition:all 0.2s;border-radius:4px;}
+.form-input:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(179,247,63,0.08);}
+.form-input::placeholder{color:var(--muted);}
+.form-input.error{border-color:var(--red) !important;box-shadow:0 0 0 3px rgba(255,69,96,0.08) !important;}
+.form-input.success{border-color:var(--green) !important;}
+.err-msg{font-family:var(--mono);font-size:11px;color:var(--red);margin-top:5px;display:none;letter-spacing:0.3px;}
+.err-msg.show{display:block;}
+.pass-wrap{position:relative;}
+.pass-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted2);cursor:pointer;font-size:16px;padding:4px;}
+.form-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.remember{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted2);cursor:pointer;}
+.remember input{accent-color:var(--lime);}
+.forgot{font-size:13px;color:var(--lime);text-decoration:none;opacity:0.8;}
+.forgot:hover{opacity:1;}
+.btn-submit{width:100%;padding:13px;font-size:15px;font-weight:700;color:#07080f;background:var(--lime);border:none;cursor:pointer;font-family:var(--font);transition:all 0.2s;box-shadow:0 0 25px rgba(179,247,63,0.2);margin-bottom:16px;border-radius:4px;}
+.btn-submit:hover{background:var(--lime2);box-shadow:0 0 40px rgba(179,247,63,0.4);}
+.btn-submit:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-demo{width:100%;padding:12px;font-size:14px;font-weight:600;color:var(--lime);background:rgba(179,247,63,0.05);border:1px solid var(--border2);cursor:pointer;font-family:var(--font);transition:all 0.2s;border-radius:4px;}
+.btn-demo:hover{background:rgba(179,247,63,0.1);}
+.alert{padding:12px 14px;font-family:var(--mono);font-size:12px;margin-bottom:16px;display:none;border-radius:4px;letter-spacing:0.3px;}
+.alert-ok{background:rgba(179,247,63,0.08);border:1px solid var(--border2);color:var(--lime);}
+.alert-err{background:rgba(255,69,96,0.08);border:1px solid rgba(255,69,96,0.2);color:var(--red);}
+.auth-footer{text-align:center;margin-top:16px;font-size:13px;color:var(--muted2);}
+.auth-footer a{color:var(--lime);text-decoration:none;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #07080f;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;}
+</style>
+</head>
+<body>
+<div class="ticker"><div class="ticker-inner">
+  <span class="ticker-item"><span class="ticker-dot"></span>WELCOME BACK TO INFRALENS</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>INDIA INFRASTRUCTURE INTELLIGENCE</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>CONNECT THE DOTS · IIT PATNA</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>WELCOME BACK TO INFRALENS</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>INDIA INFRASTRUCTURE INTELLIGENCE</span>
+  <span class="ticker-item"><span class="ticker-dot"></span>CONNECT THE DOTS · IIT PATNA</span>
+</div></div>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-icon">🛰</div>
+    <div><div class="nav-logo-name">InfraLens</div><div class="nav-logo-tag">Infrastructure Intelligence</div></div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="about.html" class="nav-link">About</a>
+    <a href="contact.html" class="nav-link">Contact</a>
+  </div>
+  <div class="nav-actions">
+    <a href="signup.html" class="btn-fill">Create Account →</a>
+  </div>
+</nav>
+
+<div class="auth-wrap">
+  <div class="auth-outer-b"><div class="auth-outer">
+    <div class="auth-card">
+
+      <div class="auth-top">
+        <div class="auth-icon">🛰</div>
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-sub">Sign in to access InfraLens dashboard</p>
+      </div>
+
+      <div class="alert alert-ok" id="alertOk"></div>
+      <div class="alert alert-err" id="alertErr"></div>
+
+      <!-- GOOGLE -->
+      <!-- REAL GOOGLE SIGN IN BUTTON -->
+<div id="g_id_onload"
+  data-client_id="861913716106-lu9g99i41piafh14erosa7vbhtr50ksg.apps.googleusercontent.com"
+  data-callback="handleGoogleResponse"
+  data-auto_prompt="false">
+</div>
+
+<div class="g_id_signin"
+  data-type="standard"
+  data-size="large"
+  data-theme="filled_black"
+  data-text="continue_with"
+  data-shape="rectangular"
+  data-logo_alignment="left"
+  data-width="340">
+</div>
+
+      <div class="or-row">OR SIGN IN WITH EMAIL</div>
+
+      <!-- EMAIL -->
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" type="email" id="email"
+          placeholder="you@example.com"
+          oninput="validateEmail()"
+          onblur="validateEmail()"/>
+        <div class="err-msg" id="emailErr">⚠ Please enter a valid email address</div>
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="form-group">
+        <label class="form-label">
+          Password
+          <a href="#" class="forgot">Forgot?</a>
+        </label>
+        <div class="pass-wrap">
+          <input class="form-input" type="password" id="password"
+            placeholder="Min 6 characters"
+            oninput="validatePassword()"
+            onblur="validatePassword()"/>
+          <button class="pass-toggle" onclick="togglePass()" type="button" id="passToggle">👁</button>
+        </div>
+        <div class="err-msg" id="passErr">⚠ Password must be at least 6 characters</div>
+      </div>
+
+      <div class="form-row">
+        <label class="remember"><input type="checkbox" checked/> Remember me</label>
+      </div>
+
+      <button class="btn-submit" id="submitBtn" onclick="handleLogin()">SIGN IN →</button>
+
+      <div class="or-row">OR</div>
+
+      <button class="btn-demo" onclick="demoLogin()">🚀 Try Demo — No Account Needed</button>
+
+      <div class="auth-footer">No account? <a href="signup.html">Create one free</a></div>
+    </div>
+  </div></div>
+</div>
+
+<script>
+// EMAIL VALIDATION
+function validateEmail() {
+  const input = document.getElementById('email');
+  const err   = document.getElementById('emailErr');
+  if (!input || !input.value) { if(input) input.className='form-input'; if(err) err.className='err-msg'; return false; }
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
+  if (!valid) {
+    input.className='form-input error';
+    err.className='err-msg show'; return false;
+  }
+  input.className='form-input success'; err.className='err-msg'; return true;
+}
+
+// PASSWORD VALIDATION
+function validatePassword() {
+  const input = document.getElementById('password');
+  const err   = document.getElementById('passErr');
+  if (!input.value) { input.className='form-input'; err.className='err-msg'; return false; }
+  if (input.value.length < 6) {
+    input.className='form-input error';
+    err.textContent='⚠ Password must be at least 6 characters';
+    err.className='err-msg show'; return false;
+  }
+  if (!/[A-Z]/.test(input.value) && input.value.length < 8) {
+    input.className='form-input error';
+    err.textContent='⚠ Use at least 8 characters for better security';
+    err.className='err-msg show'; return false;
+  }
+  input.className='form-input success'; err.className='err-msg'; return true;
+}
+
+// TOGGLE PASSWORD VISIBILITY
+function togglePass() {
+  const p = document.getElementById('password');
+  const t = document.getElementById('passToggle');
+  p.type = p.type === 'password' ? 'text' : 'password';
+  t.textContent = p.type === 'password' ? '👁' : '🙈';
+}
+
+// HANDLE LOGIN
+function handleLogin() {
+  const email = document.getElementById('email');
+  const pass  = document.getElementById('password');
+  const btn   = document.getElementById('submitBtn');
+  const errA  = document.getElementById('alertErr');
+  const okA   = document.getElementById('alertOk');
+
+  // Hide alerts
+  errA.style.display = 'none';
+  okA.style.display  = 'none';
+
+  // Check empty fields
+  if (!email.value.trim() && !pass.value.trim()) {
+    errA.textContent = '⚠ Please fill in all fields!';
+    errA.style.display = 'block';
+    email.className = 'form-input error';
+    pass.className  = 'form-input error';
+    return;
+  }
+
+  // Validate email
+  const emailOk = validateEmail();
+  if (!emailOk) {
+    errA.textContent = '⚠ Please enter a valid email address!';
+    errA.style.display = 'block';
+    return;
+  }
+
+  // Validate password
+  if (!pass.value.trim()) {
+    errA.textContent = '⚠ Password cannot be empty!';
+    errA.style.display = 'block';
+    pass.className = 'form-input error';
+    return;
+  }
+
+  if (pass.value.length < 6) {
+    errA.textContent = '⚠ Password must be at least 6 characters!';
+    errA.style.display = 'block';
+    pass.className = 'form-input error';
+    document.getElementById('passErr').className = 'err-msg show';
+    return;
+  }
+
+  if (!/[A-Z]/.test(pass.value) && pass.value.length < 8) {
+    errA.textContent = '⚠ Use at least 8 characters for better security!';
+    errA.style.display = 'block';
+    pass.className = 'form-input error';
+    return;
+  }
+
+  // ✅ All valid — proceed!
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> SIGNING IN...';
+
+  setTimeout(() => {
+    localStorage.setItem('user', JSON.stringify({
+      name:      email.value.split('@')[0],
+      email:     email.value,
+      avatar:    email.value.charAt(0).toUpperCase(),
+      loginTime: new Date().toLocaleString(),
+      method:    'email'
+    }));
+    okA.textContent = '✅ LOGIN SUCCESSFUL — REDIRECTING...';
+    okA.style.display = 'block';
+    btn.innerHTML = '✅ SUCCESS!';
+    setTimeout(() => window.location.href = 'dashboard.html', 800);
+  }, 1200);
+}
+
+// GOOGLE LOGIN
+// REAL GOOGLE LOGIN HANDLER
+function handleGoogleResponse(response) {
+  const okA = document.getElementById('alertOk');
+
+  // Decode JWT token from Google
+  const base64Url = response.credential.split('.')[1];
+  const base64    = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(
+    atob(base64).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    ).join('')
+  );
+
+  const googleUser = JSON.parse(jsonPayload);
+
+  // Save REAL Google user data!
+  localStorage.setItem('user', JSON.stringify({
+    name:      googleUser.name,
+    email:     googleUser.email,
+    avatar:    googleUser.name.charAt(0).toUpperCase(),
+    picture:   googleUser.picture,
+    loginTime: new Date().toLocaleString(),
+    method:    'google'
+  }));
+
+  okA.textContent = `✅ Welcome ${googleUser.name} — REDIRECTING...`;
+  okA.style.display = 'block';
+
+  setTimeout(() => window.location.href = 'dashboard.html', 900);
+}
+
+// DEMO LOGIN
+function demoLogin() {
+  const okA = document.getElementById('alertOk');
+  okA.textContent = '✅ DEMO MODE — REDIRECTING...';
+  okA.style.display = 'block';
+  localStorage.setItem('user', JSON.stringify({
+    name:'Demo User', email:'demo@infralens.in',
+    avatar:'D', loginTime:new Date().toLocaleString(), method:'demo'
+  }));
+  setTimeout(() => window.location.href = 'dashboard.html', 900);
+}
+
+// ENTER KEY
+document.addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
+
+// AUTO REDIRECT IF LOGGED IN
+if (localStorage.getItem('user')) window.location.href = 'dashboard.html';
+</script>
+</body>
+</html>

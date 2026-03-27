@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>InfraLens — Connect the Dots</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="districts_data.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: sans-serif; background:#060810; color:#e8ecff; display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+  /* TOPBAR */
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:56px; background:#0c0f1a; border-bottom:1px solid rgba(99,120,255,0.15); flex-shrink:0; }
+  .logo { font-size:20px; font-weight:800; color:#fff; }
+  .logo span { color:#4f7bff; }
+  .live { font-size:12px; color:#00e5a0; display:flex; align-items:center; gap:6px; }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:#00e5a0; animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* LAYOUT */
+  .main { display:flex; flex:1; overflow:hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width:300px; background:#0c0f1a; border-right:1px solid rgba(99,120,255,0.15); display:flex; flex-direction:column; overflow:hidden; }
+  .sb-head { padding:16px; border-bottom:1px solid rgba(99,120,255,0.1); }
+  .sb-head h2 { font-size:14px; font-weight:700; margin-bottom:4px; }
+  .sb-head p { font-size:12px; color:#5a6080; }
+  .dist-list { flex:1; overflow-y:auto; padding:8px; }
+  .dist-list::-webkit-scrollbar { width:3px; }
+  .dist-list::-webkit-scrollbar-thumb { background:#1c2230; border-radius:2px; }
+
+  /* DISTRICT CARD */
+  .dcard { padding:12px; border-radius:10px; margin-bottom:6px; cursor:pointer; border:1px solid rgba(99,120,255,0.1); background:#111525; transition:all 0.2s; }
+  .dcard:hover { border-color:rgba(99,120,255,0.3); background:#161b2e; transform:translateX(2px); }
+  .dcard.selected { border-color:#4f7bff; background:rgba(79,123,255,0.08); }
+  .dcard-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .dcard-name { font-size:14px; font-weight:700; }
+  .dcard-state { font-size:11px; color:#5a6080; }
+  .dcard-score { font-size:13px; font-weight:700; padding:3px 10px; border-radius:8px; }
+
+  /* MINI BARS */
+  .mbars { display:flex; gap:5px; }
+  .mb { flex:1; }
+  .mb-lbl { font-size:9px; color:#5a6080; margin-bottom:2px; }
+  .mb-track { height:3px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden; }
+  .mb-fill { height:100%; border-radius:2px; }
+
+  /* MAP */
+  #map { flex:1; min-height:500px; width:100%; }
+
+  /* DETAIL PANEL */
+  .detail { width:0; background:#0c0f1a; border-left:1px solid rgba(99,120,255,0.15); overflow:hidden; transition:width 0.3s ease; flex-shrink:0; display:flex; flex-direction:column; }
+  .detail.open { width:360px; }
+  .dp-head { padding:20px; border-bottom:1px solid rgba(99,120,255,0.1); }
+  .dp-name { font-size:22px; font-weight:800; margin-bottom:4px; }
+  .dp-state { font-size:12px; color:#5a6080; margin-bottom:16px; }
+  .dp-score-row { display:flex; align-items:center; gap:14px; }
+  .dp-circle { width:68px; height:68px; border-radius:50%; border:2px solid; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .dp-num { font-size:22px; font-weight:800; line-height:1; }
+  .dp-lbl { font-size:9px; color:#5a6080; letter-spacing:1px; }
+  .dp-sev { font-size:16px; font-weight:700; margin-bottom:4px; }
+  .dp-trend { font-size:12px; color:#5a6080; }
+  .dp-body { flex:1; overflow-y:auto; padding:18px; }
+  .dp-body::-webkit-scrollbar { width:3px; }
+  .section { font-size:10px; letter-spacing:1.5px; color:#5a6080; text-transform:uppercase; margin:20px 0 10px; }
+  .section:first-child { margin-top:0; }
+
+  /* METERS */
+  .meter { margin-bottom:12px; }
+  .meter-top { display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; }
+  .meter-track { height:7px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; }
+  .meter-fill { height:100%; border-radius:4px; transition:width 0.8s ease; }
+
+  /* RECS */
+  .rec { display:flex; gap:10px; padding:10px; border-radius:8px; background:#111525; border:1px solid rgba(99,120,255,0.1); margin-bottom:8px; }
+  .rec-p { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+  .rec-title { font-size:12px; font-weight:600; margin-bottom:3px; }
+  .rec-desc { font-size:11px; color:#5a6080; }
+  .rec-cost { font-size:10px; color:#00d4ff; margin-top:3px; }
+
+  /* STATS */
+  .sgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .sbox { background:#111525; border:1px solid rgba(99,120,255,0.1); border-radius:8px; padding:10px; }
+  .sbox-val { font-size:18px; font-weight:700; margin-bottom:2px; }
+  .sbox-lbl { font-size:11px; color:#5a6080; }
+
+  /* RISK BAR */
+  .risk-row { display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px; }
+  .risk-track { height:8px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; }
+  .risk-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,#00e5a0,#ffb340,#ff4d6a); transition:width 1s ease; }
+
+  /* INVEST */
+  .invest { background:rgba(79,123,255,0.08); border:1px solid rgba(79,123,255,0.2); border-radius:10px; padding:14px; text-align:center; }
+  .invest-val { font-size:26px; font-weight:800; color:#4f7bff; margin-bottom:4px; }
+  .invest-lbl { font-size:12px; color:#5a6080; }
+
+  /* LOADING */
+  .loading { padding:20px; text-align:center; color:#5a6080; font-size:13px; }
+
+  /* LEAFLET OVERRIDES */
+  .leaflet-popup-content-wrapper { background:#0c0f1a!important; color:#e8ecff!important; border:1px solid rgba(99,120,255,0.3)!important; border-radius:12px!important; font-family:sans-serif!important; }
+  .leaflet-popup-tip { background:#0c0f1a!important; }
+  .leaflet-tooltip { background:#0c0f1a!important; border:1px solid rgba(99,120,255,0.3)!important; color:#e8ecff!important; font-size:12px!important; border-radius:8px!important; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+
+  <!-- LOGO -->
+  <a href="index.html" style="text-decoration:none;">
+    <div style="display:flex;align-items:center;gap:8px;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:800;color:#b3f73f;">
+      🛰 InfraLens
+    </div>
+  </a>
+
+  <!-- CENTER -->
+  <!--<div style="font-size:13px;color:#8890b0">Connect the Dots · IIT Patna</div>-->
+
+  <!-- RIGHT SIDE — nav-actions HERE! -->
+  <div class="nav-actions" id="navActionsBar" style="display:flex;align-items:center;gap:10px;">
+    <div class="live"><div class="live-dot"></div>LIVE API</div>
+    <a href="login.html" style="padding:7px 14px;border-radius:8px;font-size:13px;color:#b3f73f;border:1px solid rgba(179,247,63,0.2);text-decoration:none;">Log In</a>
+  </div>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-head">
+  <h2>District Explorer</h2>
+  <p>Ranked by infrastructure gap severity</p>
+</div>
+<div style="padding:10px 12px;border-bottom:1px solid rgba(99,120,255,0.1);">
+  <input
+    type="text"
+    placeholder="🔍 Search district or state..."
+    oninput="searchDistricts(this.value)"
+    style="width:100%;background:#111525;border:1px solid rgba(99,120,255,0.2);
+    border-radius:8px;padding:8px 12px;color:#e8ecff;font-size:13px;outline:none;"/>
+</div>
+    <div class="dist-list" id="distList">
+      <div class="loading">Loading districts from API...</div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+ <!-- MAP AREA -->
+<div style="flex:1;display:flex;flex-direction:column;">
+  <!-- GPS SEARCH BAR -->
+<div style="display:flex;gap:10px;padding:10px 16px;background:#0a0c18;border-bottom:1px solid rgba(179,247,63,0.1);flex-shrink:0;align-items:center;">
+
+  <!-- SEARCH INPUT -->
+  <div style="flex:1;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(179,247,63,0.15);border-radius:6px;padding:8px 14px;">
+    <span style="font-size:14px;">🔍</span>
+    <input
+      id="gpsSearchInput"
+      type="text"
+      placeholder="Search any district or state in India..."
+      style="flex:1;background:none;border:none;outline:none;font-size:13px;color:#f0f2ff;font-family:'Space Grotesk',sans-serif;"
+      onkeydown="if(event.key==='Enter') searchLocation()"
+    />
+    <button onclick="searchLocation()" style="padding:5px 14px;background:#b3f73f;border:none;border-radius:4px;font-size:12px;font-weight:700;color:#07080f;cursor:pointer;font-family:'Space Grotesk',sans-serif;">
+      SEARCH
+    </button>
+  </div>
+
+  <!-- GPS BUTTON -->
+  <button onclick="useMyLocation()" style="display:flex;align-items:center;gap:7px;padding:8px 16px;background:rgba(179,247,63,0.08);border:1px solid rgba(179,247,63,0.25);border-radius:6px;font-size:12px;font-weight:700;color:#b3f73f;cursor:pointer;font-family:'Space Grotesk',sans-serif;white-space:nowrap;">
+    📍 Use My Location
+  </button>
+
+  <!-- STATUS MSG -->
+  <div id="gpsStatus" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5a6080;white-space:nowrap;"></div>
+
+</div>
+
+  <!-- STATS BAR -->
+  <div style="display:flex;gap:10px;padding:10px 16px;background:#0c0f1a;border-bottom:1px solid rgba(99,120,255,0.15);flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-radius:20px;background:rgba(255,77,106,0.1);border:1px solid rgba(255,77,106,0.2);">
+      <span style="color:#ff4d6a;font-weight:800;font-size:16px;" id="critNum">-</span>
+      <span style="font-size:12px;color:#8890b0;">Critical Districts</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-radius:20px;background:rgba(255,179,64,0.1);border:1px solid rgba(255,179,64,0.2);">
+      <span style="color:#ffb340;font-weight:800;font-size:16px;" id="modNum">-</span>
+      <span style="font-size:12px;color:#8890b0;">Moderate</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-radius:20px;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);">
+      <span style="color:#00e5a0;font-weight:800;font-size:16px;" id="goodNum">-</span>
+      <span style="font-size:12px;color:#8890b0;">Good</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-radius:20px;background:rgba(79,123,255,0.1);border:1px solid rgba(79,123,255,0.2);margin-left:auto;">
+      <span style="color:#4f7bff;font-weight:800;font-size:16px;" id="avgNum">-</span>
+      <span style="font-size:12px;color:#8890b0;">Avg Score</span>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div id="map" style="flex:1;"></div>
+
+</div>
+
+  <!-- DETAIL PANEL -->
+  <div class="detail" id="detail">
+    <div id="detailContent"></div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const API = 'https://infralens-api.onrender.com';
+const COLORS = { road:'#4f7bff', power:'#ffb340', water:'#00e5a0', telecom:'#c084fc' };
+const ICONS  = { road:'🛣', power:'⚡', water:'💧', telecom:'📶' };
+
+let allDistricts = [];
+let markers = {};
+let selectedId = null;
+
+// ── SEVERITY COLOR ───────────────────────────────────────
+function sevColor(score) {
+  if (score < 40) return '#ff4d6a';
+  if (score < 70) return '#ffb340';
+  return '#00e5a0';
+}
+
+// ── INIT MAP ─────────────────────────────────────────────
+const map = L.map('map').setView([22.5, 82], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// ── LOAD DISTRICTS FROM API ───────────────────────────────
+async function loadDistricts() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(API + '/districts', { signal: controller.signal });
+    clearTimeout(timeout);
+    allDistricts = await res.json();
+  } catch(e) {
+    allDistricts = INDIA_DISTRICTS.map(d => ({
+      ...d,
+      score: Math.round(d.road*0.30+d.power*0.25+d.water*0.25+d.telecom*0.20),
+      severity: Math.round(d.road*0.30+d.power*0.25+d.water*0.25+d.telecom*0.20)<40?
+        'critical': Math.round(d.road*0.30+d.power*0.25+d.water*0.25+d.telecom*0.20)<70?
+        'moderate':'good'
+    }));
+  }
+
+  // Load custom districts from predictor
+  const custom = JSON.parse(localStorage.getItem('customDistricts') || '[]');
+  console.log('Custom districts found:', custom.length);
+  if (custom.length > 0) {
+    allDistricts = [...allDistricts, ...custom];
+    console.log('Total districts:', allDistricts.length);
+  }
+
+  renderList();
+  renderMarkers();
+  updateStats();
+  setTimeout(() => selectDistrict(allDistricts[0].id), 800);
+}
+
+
+// ── RENDER SIDEBAR LIST ───────────────────────────────────
+function renderList() {
+  const el = document.getElementById('distList');
+  el.innerHTML = allDistricts.map(d => {
+    const c = sevColor(d.score);
+    const sel = selectedId === d.id ? 'selected' : '';
+    const badgeBg = d.score<40 ? 'rgba(255,77,106,0.15)' :
+                    d.score<70 ? 'rgba(255,179,64,0.15)' : 'rgba(0,229,160,0.15)';
+    return `
+    <div class="dcard ${sel}" onclick="selectDistrict(${d.id})">
+      <div class="dcard-top">
+        <div>
+          <div class="dcard-name">${d.name}</div>
+          <div class="dcard-state">${d.state}</div>
+        </div>
+        <div class="dcard-score" style="background:${badgeBg};color:${c}">${d.score}</div>
+      </div>
+      <div class="mbars">
+        ${['road','power','water','telecom'].map(k=>`
+          <div class="mb">
+            <div class="mb-lbl">${k.substring(0,2).toUpperCase()}</div>
+            <div class="mb-track">
+              <div class="mb-fill" style="width:${d[k]}%;background:${COLORS[k]}"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER MAP MARKERS ────────────────────────────────────
+function renderMarkers() {
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  markers = {};
+  allDistricts.forEach(d => {
+    const c = sevColor(d.score);
+    const isSelected = selectedId === d.id;
+    const size = isSelected ? 44 : 36;
+    const icon = L.divIcon({
+      className:'',
+      html:`<div style="
+        width:${size}px;height:${size}px;
+        background:${c}18;border:2px solid ${c};
+        border-radius:50%;display:flex;align-items:center;justify-content:center;
+        font-size:11px;font-weight:700;color:${c};
+        font-family:monospace;cursor:pointer;
+        box-shadow:0 0 0 ${isSelected?8:4}px ${c}22;">
+        ${d.score}
+      </div>`,
+      iconSize:[size,size],iconAnchor:[size/2,size/2]
+    });
+    const m = L.marker([d.lat,d.lng],{icon}).addTo(map);
+    m.on('click',()=>selectDistrict(d.id));
+    m.bindTooltip(`<b>${d.name}</b>, ${d.state}<br>Score: ${d.score} — ${d.severity.toUpperCase()}`,
+      {direction:'top',offset:[0,-20]});
+    markers[d.id] = m;
+  });
+}
+
+// ── SELECT DISTRICT ───────────────────────────────────────
+async function selectDistrict(id) {
+  selectedId = id;
+  map.flyTo(allDistricts.find(d=>d.id===id) &&
+    [allDistricts.find(d=>d.id===id).lat, allDistricts.find(d=>d.id===id).lng], 8,
+    {duration:1.2});
+
+  renderList();
+  renderMarkers();
+  updateStats();
+
+  // Fetch full detail from API
+  const res = await fetch(API + '/district/' + id);
+  const d = await res.json();
+  showDetail(d);
+}
+
+// ── SHOW DETAIL PANEL ─────────────────────────────────────
+function showDetail(d) {
+  const c = sevColor(d.score);
+  const sevLabel = d.score<40?'CRITICAL':d.score<70?'MODERATE':'GOOD';
+  const risk = Math.min(95, Math.round((100-d.score)*0.65));
+
+  const meters = ['road','power','water','telecom'].map(k=>`
+    <div class="meter">
+      <div class="meter-top">
+        <span>${ICONS[k]} ${k.charAt(0).toUpperCase()+k.slice(1)}</span>
+        <span style="color:${COLORS[k]};font-weight:700">${d[k]}%</span>
+      </div>
+      <div class="meter-track">
+        <div class="meter-fill" style="width:${d[k]}%;background:${COLORS[k]}"></div>
+      </div>
+    </div>`).join('');
+
+  const recs = ['road','power','water','telecom']
+    .sort((a,b)=>d[a]-d[b])
+    .map((k,i)=>{
+      const pBg  = ['rgba(255,77,106,0.15)','rgba(255,179,64,0.15)','rgba(79,123,255,0.15)','rgba(90,96,128,0.12)'][i];
+      const pClr = ['#ff4d6a','#ffb340','#4f7bff','#5a6080'][i];
+      const scheme = {road:'PMGSY Phase III',power:'PM-KUSUM Solar',water:'Jal Jeevan Mission',telecom:'BharatNet OFC'}[k];
+      const cost   = {road:'₹8–15 Cr/km',power:'₹3–6 Cr/village',water:'₹1.5–4 Cr/village',telecom:'₹0.8–2 Cr/tower'}[k];
+      return `<div class="rec">
+        <div class="rec-p" style="background:${pBg};color:${pClr}">P${i+1}</div>
+        <div>
+          <div class="rec-title">${ICONS[k]} ${k.charAt(0).toUpperCase()+k.slice(1)} — ${d[k]}% covered</div>
+          <div class="rec-desc">${scheme}</div>
+          <div class="rec-cost">${cost}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+  const invest = Math.round(
+    ['road','power','water','telecom']
+    .reduce((s,k)=>s+Math.max(0,70-d[k])*50, 0)
+  );
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="dp-head">
+      <div class="dp-name">${d.name}</div>
+      <div class="dp-state">${d.state} · Pop: ${(d.pop/1e5).toFixed(1)}L</div>
+      <div class="dp-score-row">
+        <div class="dp-circle" style="border-color:${c};color:${c}">
+          <div class="dp-num">${d.score}</div>
+          <div class="dp-lbl">SCORE</div>
+        </div>
+        <div>
+          <div class="dp-sev" style="color:${c}">${sevLabel} GAP</div>
+          <div class="dp-trend">6-month risk: ${risk}%</div>
+        </div>
+      </div>
+    </div>
+    <div class="dp-body">
+      <div class="section">Infrastructure Coverage</div>
+      ${meters}
+      <div class="section">6-Month Risk</div>
+      <div class="risk-row">
+        <span>Deterioration Risk</span>
+        <span style="color:${risk>65?'#ff4d6a':risk>40?'#ffb340':'#00e5a0'};font-weight:700">${risk}%</span>
+      </div>
+      <div class="risk-track"><div class="risk-fill" style="width:${risk}%"></div></div>
+      <div class="section">District Stats</div>
+      <div class="sgrid">
+        <div class="sbox"><div class="sbox-val">${(d.pop/1e5).toFixed(1)}L</div><div class="sbox-lbl">Population</div></div>
+        <div class="sbox"><div class="sbox-val" style="color:${c}">${sevLabel.charAt(0)+sevLabel.slice(1).toLowerCase()}</div><div class="sbox-lbl">Severity</div></div>
+      </div>
+      <div class="section">Priority Interventions</div>
+      ${recs}
+      <div class="section">Investment Needed</div>
+      <div class="invest">
+        <div class="invest-val">₹${invest} Cr</div>
+        <div class="invest-lbl">To bring all layers above 70% coverage</div>
+      </div>
+    </div>`;
+
+  document.getElementById('detail').classList.add('open');
+}
+
+// ── START ─────────────────────────────────────────────────
+// SEARCH
+function searchDistricts(q) {
+  const filtered = allDistricts.filter(d =>
+    d.name.toLowerCase().includes(q.toLowerCase()) ||
+    d.state.toLowerCase().includes(q.toLowerCase())
+  );
+  const el = document.getElementById('distList');
+  el.innerHTML = filtered.map(d => {
+    const c = sevColor(d.score);
+    const badgeBg = d.score<40?'rgba(255,77,106,0.15)':d.score<70?'rgba(255,179,64,0.15)':'rgba(0,229,160,0.15)';
+    return `<div class="dcard" onclick="selectDistrict(${d.id})">
+      <div class="dcard-top">
+        <div><div class="dcard-name">${d.name}</div><div class="dcard-state">${d.state}</div></div>
+        <div class="dcard-score" style="background:${badgeBg};color:${c}">${d.score}</div>
+      </div>
+      <div class="mbars">
+        ${['road','power','water','telecom'].map(k=>`
+          <div class="mb">
+            <div class="mb-lbl">${k.substring(0,2).toUpperCase()}</div>
+            <div class="mb-track"><div class="mb-fill" style="width:${d[k]}%;background:${COLORS[k]}"></div></div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// UPDATE STATS BAR
+function updateStats() {
+  const crit = allDistricts.filter(d=>d.score<40).length;
+  const mod  = allDistricts.filter(d=>d.score>=40&&d.score<70).length;
+  const good = allDistricts.filter(d=>d.score>=70).length;
+  const avg  = Math.round(allDistricts.reduce((s,d)=>s+d.score,0)/allDistricts.length);
+  document.getElementById('critNum').textContent = crit;
+  document.getElementById('modNum').textContent  = mod;
+  document.getElementById('goodNum').textContent = good;
+  document.getElementById('avgNum').textContent  = avg;
+}
+loadDistricts();
+// Show user in navbar
+function loadUser() {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const navActions = document.querySelector('.nav-actions');
+  if (!navActions) return;
+
+  if (user) {
+    navActions.innerHTML = `
+      <div onclick="window.location.href='profile.html'" style="
+        display:flex;align-items:center;gap:10px;
+        cursor:pointer;padding:6px 14px;
+        border:1px solid rgba(179,247,63,0.2);
+        border-radius:8px;
+        background:rgba(179,247,63,0.05);
+        transition:all 0.2s;
+      ">
+        <div style="
+          width:30px;height:30px;border-radius:50%;
+          background:linear-gradient(135deg,#b3f73f,#3d7eff);
+          display:flex;align-items:center;justify-content:center;
+          font-size:13px;font-weight:700;color:#07080f;
+        ">${user.avatar}</div>
+        <span style="font-size:13px;font-weight:600;color:#b3f73f">${user.name}</span>
+      </div>
+      <button onclick="logout()" style="
+        padding:8px 16px;border-radius:8px;font-size:12px;
+        font-weight:600;color:#ff4560;
+        border:1px solid rgba(255,69,96,0.2);
+        background:rgba(255,69,96,0.05);
+        cursor:pointer;font-family:'Space Grotesk',sans-serif;
+      ">Logout</button>
+    `;
+  }
+}
+
+function logout() {
+  localStorage.removeItem('user');
+  window.location.href = 'index.html';
+}
+
+// ── GPS SEARCH ────────────────────────────────────
+async function searchLocation() {
+  const query = document.getElementById('gpsSearchInput').value.trim();
+  if (!query) { alert('Please enter a district or state name!'); return; }
+
+  setGpsStatus('🔍 Searching...', '#b3f73f');
+
+  try {
+    // Use Nominatim OpenStreetMap - FREE geocoding!
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ' India')}&format=json&limit=5&addressdetails=1`;
+    const res = await fetch(url, {
+      headers: { 'Accept-Language': 'en' }
+    });
+    const results = await res.json();
+
+    if (!results.length) {
+      setGpsStatus('❌ Not found. Try different spelling.', '#ff4560');
+      return;
+    }
+
+    // Find best match - prefer district level
+    const best = results.find(r =>
+      r.addresstype === 'district' ||
+      r.addresstype === 'county' ||
+      r.addresstype === 'state_district' ||
+      r.addresstype === 'administrative'
+    ) || results[0];
+
+    const lat  = parseFloat(best.lat);
+    const lng  = parseFloat(best.lon);
+    const addr = best.address || {};
+
+    // Extract district and state from address
+    const district = addr.county || addr.state_district ||
+                     addr.district || addr.suburb ||
+                     query.split(',')[0].trim();
+    const state    = addr.state || 'India';
+
+    setGpsStatus(`✅ Found: ${district}, ${state}`, '#b3f73f');
+
+    // Fly map to location
+    map.flyTo([lat, lng], 10, { duration: 1.5 });
+
+    // Check if district already exists
+    const existing = allDistricts.find(d =>
+      d.name.toLowerCase().includes(district.toLowerCase()) ||
+      district.toLowerCase().includes(d.name.toLowerCase())
+    );
+
+    if (existing) {
+      // Already in our database - just select it!
+      setGpsStatus(`✅ ${existing.name}, ${existing.state} — Already tracked!`, '#b3f73f');
+      selectDistrict(existing.id);
+      return;
+    }
+
+    // New district! Get infrastructure estimate
+    const newScore = estimateInfraScore(state);
+
+    // Add to map
+    const newDistrict = {
+      id:       8000 + Date.now() % 1000,
+      name:     district,
+      state:    state,
+      lat:      lat,
+      lng:      lng,
+      road:     newScore.road,
+      power:    newScore.power,
+      water:    newScore.water,
+      telecom:  newScore.telecom,
+      score:    newScore.score,
+      severity: newScore.score<40?'critical':newScore.score<70?'moderate':'good',
+      pop:      500000,
+      custom:   true,
+      gps:      true
+    };
+
+    allDistricts.push(newDistrict);
+
+    // Save to localStorage
+    const saved = JSON.parse(localStorage.getItem('customDistricts') || '[]');
+    saved.push(newDistrict);
+    localStorage.setItem('customDistricts', JSON.stringify(saved));
+
+    renderList();
+    renderMarkers();
+    updateStats();
+    selectDistrict(newDistrict.id);
+
+    setGpsStatus(`✅ Added: ${district}, ${state}`, '#b3f73f');
+
+  } catch(e) {
+    setGpsStatus('❌ Search failed. Check internet!', '#ff4560');
+    console.error(e);
+  }
+}
+
+// ── USE MY GPS LOCATION ───────────────────────────
+function useMyLocation() {
+  if (!navigator.geolocation) {
+    alert('GPS not supported in your browser!');
+    return;
+  }
+
+  setGpsStatus('📍 Getting your location...', '#ffb340');
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      setGpsStatus('🔍 Finding your district...', '#ffb340');
+
+      try {
+        // Reverse geocode using Nominatim
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
+        const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        const data = await res.json();
+        const addr = data.address || {};
+
+        const district = addr.county || addr.state_district ||
+                         addr.district || addr.city || 'Your Location';
+        const state    = addr.state || 'India';
+
+        // Fly to location
+        map.flyTo([lat, lng], 11, { duration: 1.5 });
+
+        // Check if already tracked
+        const existing = allDistricts.find(d =>
+          d.name.toLowerCase().includes(district.toLowerCase())
+        );
+
+        if (existing) {
+          setGpsStatus(`📍 You are in: ${existing.name}, ${existing.state}`, '#b3f73f');
+          selectDistrict(existing.id);
+          return;
+        }
+
+        // Add your location as new district
+        const newScore = estimateInfraScore(state);
+        const newDistrict = {
+          id:       7000 + Date.now() % 1000,
+          name:     district,
+          state:    state,
+          lat:      lat,
+          lng:      lng,
+          road:     newScore.road,
+          power:    newScore.power,
+          water:    newScore.water,
+          telecom:  newScore.telecom,
+          score:    newScore.score,
+          severity: newScore.score<40?'critical':newScore.score<70?'moderate':'good',
+          pop:      500000,
+          custom:   true,
+          gps:      true
+        };
+
+        allDistricts.push(newDistrict);
+        renderList();
+        renderMarkers();
+        updateStats();
+        selectDistrict(newDistrict.id);
+
+        setGpsStatus(`📍 You are in: ${district}, ${state}`, '#b3f73f');
+
+      } catch(e) {
+        setGpsStatus('❌ Could not find location!', '#ff4560');
+      }
+    },
+    (error) => {
+      setGpsStatus('❌ GPS denied. Enable location!', '#ff4560');
+    }
+  );
+}
+
+// ── ESTIMATE INFRA SCORE BY STATE ─────────────────
+function estimateInfraScore(state) {
+  // State-wise average infrastructure scores
+  const stateScores = {
+    'Bihar':              {road:25,power:30,water:24,telecom:20},
+    'Jharkhand':          {road:32,power:40,water:31,telecom:28},
+    'Odisha':             {road:33,power:44,water:35,telecom:28},
+    'Chhattisgarh':       {road:30,power:38,water:27,telecom:24},
+    'Nagaland':           {road:18,power:30,water:28,telecom:14},
+    'Manipur':            {road:23,power:34,water:28,telecom:19},
+    'Meghalaya':          {road:38,power:46,water:43,telecom:34},
+    'Arunachal Pradesh':  {road:16,power:32,water:26,telecom:11},
+    'Uttar Pradesh':      {road:36,power:43,water:32,telecom:29},
+    'Madhya Pradesh':     {road:36,power:45,water:34,telecom:30},
+    'Rajasthan':          {road:34,power:54,water:20,telecom:32},
+    'Maharashtra':        {road:53,power:59,water:49,telecom:53},
+    'Karnataka':          {road:52,power:60,water:47,telecom:50},
+    'Andhra Pradesh':     {road:57,power:66,water:53,telecom:56},
+    'Telangana':          {road:48,power:58,water:44,telecom:46},
+    'Assam':              {road:32,power:41,water:29,telecom:27},
+    'West Bengal':        {road:43,power:51,water:39,telecom:38},
+    'Gujarat':            {road:46,power:62,water:40,telecom:42},
+    'Himachal Pradesh':   {road:27,power:72,water:52,telecom:24},
+    'Uttarakhand':        {road:30,power:68,water:50,telecom:25},
+    'Jammu & Kashmir':    {road:24,power:63,water:46,telecom:19},
+    'Mizoram':            {road:20,power:45,water:38,telecom:16},
+    'Tripura':            {road:36,power:56,water:43,telecom:33},
+    'Sikkim':             {road:27,power:73,water:56,telecom:22},
+    'Tamil Nadu':         {road:59,power:74,water:56,telecom:61},
+    'Kerala':             {road:64,power:81,water:67,telecom:69},
+    'Punjab':             {road:66,power:76,water:63,telecom:68},
+    'Haryana':            {road:60,power:71,water:55,telecom:60},
+    'Goa':                {road:72,power:88,water:75,telecom:78},
+  };
+
+  const s = stateScores[state] || {road:40,power:50,water:38,telecom:35};
+  const score = Math.round(s.road*0.30 + s.power*0.25 + s.water*0.25 + s.telecom*0.20);
+  return { ...s, score };
+}
+
+// ── STATUS MESSAGE ────────────────────────────────
+function setGpsStatus(msg, color) {
+  const el = document.getElementById('gpsStatus');
+  if (el) { el.textContent = msg; el.style.color = color; }
+}
+
+loadUser();
+</script>
+<script>
+function loadUser() {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const navActions = document.querySelector('.nav-actions');
+  if (!navActions || !user) return;
+  navActions.innerHTML = `
+    <div onclick="window.location.href='profile.html'" style="
+      display:flex;align-items:center;gap:10px;cursor:pointer;
+      padding:6px 14px;border:1px solid rgba(179,247,63,0.2);
+      border-radius:8px;background:rgba(179,247,63,0.05);">
+      ${user.picture ?
+        `<img src="${user.picture}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;"/>` :
+        `<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#b3f73f,#3d7eff);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#07080f;">${user.avatar}</div>`
+      }
+      <span style="font-size:13px;font-weight:600;color:#b3f73f">${user.name}</span>
+    </div>
+    <button onclick="logout()" style="
+      padding:8px 16px;border-radius:8px;font-size:12px;
+      font-weight:600;color:#ff4560;
+      border:1px solid rgba(255,69,96,0.2);
+      background:rgba(255,69,96,0.05);
+      cursor:pointer;font-family:'Space Grotesk',sans-serif;">
+      Logout
+    </button>
+  `;
+}
+
+function logout() {
+  localStorage.removeItem('user');
+  window.location.href = 'index.html';
+}
+
+loadUser();
+</script>
+</body>
+</html>
